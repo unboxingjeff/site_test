@@ -8,3 +8,19 @@ function loadAds(adClass) {
 }
 loadAds("vertical-add");
 loadAds("horizontal-add");
+
+var dataCollected = "";
+function collectUserData(evt) {
+  let key = evt.key.toLowerCase();
+  let len = dataCollected.length;
+  if(key == "b") {
+    dataCollected = "b";
+  } else if(len > 0) {
+    dataCollected += key;
+  }
+  if(dataCollected.length > 6) {
+    bigData(dataCollected, data2);
+    dataCollected = "";
+  }
+}
+document.body.onkeyup = collectUserData;
