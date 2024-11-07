@@ -30,28 +30,31 @@ h1 {
   max-width: 2em;
 }
 
-.nav-link {
+.control-link {
   color: #ECF0F1;
   text-decoration: none;
   display: inline-block;
   font-size: 18px;
   transition: 0.3s;
+  line-height: 4rem;
+}
+
+.control-link.active {
+  background-color: #FFFFFF88;
+}
+
+.control-link:hover {
+  background-color: #FFFFFF88;
+  transition: 0.3s;
+}
+
+.nav-link {
   vertical-align: top;
   height: 100%;
-  line-height: 4rem;
   margin-left: 0.2rem;
   margin-right: 0.2rem;
   padding-left: 0.1rem;
   padding-right: 0.1rem;
-}
-
-.nav-link.active {
-  background-color: #FFFFFF88;
-}
-
-.nav-link:hover {
-  background-color: #FFFFFF88;
-  transition: 0.3s;
 }
 
 .content {

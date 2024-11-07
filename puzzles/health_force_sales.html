@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <title>JR Podcasts</title>
+    <link rel="icon" type="image/x-icon" href="img/jrp_logo.ico">
+    <link rel="stylesheet" href="css/main.css">
+    <style>
+      #graph-canvas {
+        
+      }
+    </style>
+    <script>
+      var graphData = {"1/1": 0, "1/8": 50, "1/15": 60, "1/22": 120, "1/29": 210, "2/5": 360, "2/12": 515, "2/19": 762};
+      var graphArea = null;
+      var maxX = 0;
+      var maxY = 0;
+      
+      var puzzleSolution = ["1111110011001100111111001111110000111111001111110000111111001100110011111100001111110011001100111111001111110011000000111111000011111100111111001100000011001100111111001111110011111100110000110000",
+        "0011000011001100001100001100000000001100001100000000001100001100110011000000001100110011001100000011000000110011000000110000000011000000110011001100000011001100001100000011000011001100111100110000",
+        "0011000011111100001100001111110000001100001111110000001100001111110011111100001111110011001100001100000011000011000000111111000011111100110011001100000011001100001100000011000011001100110011110000",
+        "0011000011001100001100000000110000001100000000110000001100001100110011000000001100000011001100110000001100000011000000110000000000001100110011001100000011001100001100000011000011001100110000110000",
+        "0011000011001100111111001111110000111111001111110000001100001100110011111100001100000011111100111111001111110011111100111111000011111100111111001111110011111100001100001111110011111100110000110000",
+        "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"];
+      var puzzleIdx = 0;
+      var puzzleX = 0;
+      var puzzleY = 0;
+      var puzzleRunning = false;
+      
+      function render() {
+        let canvas = document.getElementById("graph-canvas");
+        let ctx = canvas.getContext("2d");
+        if(graphArea == null) {
+          graphArea = {"x": 60, "y": 60, "width": canvas.width - 70, "height": canvas.height - 100}
+        }
+        
+        if(puzzleRunning) {
+          renderPuzzle(canvas, ctx);
+        } else {
+          ctx.fillStyle = "black";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          
+          renderTitle(canvas, ctx, "Health Force Sales");
+          renderGraphOutline(ctx);
+          
+          maxX = Object.keys(graphData).length;
+          maxY = 0;
+          for(let datum in graphData) {
+            if(graphData[datum] > maxY) {
+              maxY = graphData[datum];
+            }
+          }
+          maxY = Math.ceil(maxY / 100) * 100;
+          
+          for(let i = 100; i < maxY; i += 100) {
+            renderAxisLine(canvas, ctx, i);
+          }
+          
+          renderHorizontalAxis(canvas, ctx);
+          renderVerticalAxis(canvas, ctx);
+          renderData(canvas, ctx);
+        }
+        
+        window.requestAnimationFrame(render);
+      }
+      
+      function renderTitle(canvas, ctx, title) {
+        ctx.font = "32px sans-serif";
+        ctx.fillStyle = "white";
+        let titleM = ctx.measureText(title);
+        ctx.fillText(title, canvas.width / 2 - titleM.width / 2, 42);
+      }
+      
+      function renderGraphOutline(ctx) {
+        ctx.strokeStyle = "lightGray";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(graphArea.x, graphArea.y, graphArea.width, graphArea.height);
+      }
+      
+      function renderAxisLine(canvas, ctx, y) {
+        ctx.strokeStyle = "gray";
+        ctx.lineWidth = 1;
+        let point1 = transformPoint(0, y, canvas);
+        let point2 = transformPoint(maxX, y, canvas);
+        ctx.beginPath();
+        ctx.moveTo(point1.x + 10, point1.y);
+        ctx.lineTo(point2.x - 10, point2.y);
+        ctx.stroke();
+      }
+      
+      function renderHorizontalAxis(canvas, ctx) {
+        let i = 0.5;
+        let textHeight = 14;
+        ctx.fillStyle = "white";
+        ctx.font = `${textHeight}px sans-serif`;
+        for(let date in graphData) {
+          let midpoint = transformPoint(i, 0, canvas);
+          let textWidth = ctx.measureText(date).width;
+          ctx.fillText(date, midpoint.x - textWidth / 2, midpoint.y + textHeight);
+          i++;
+        }
+      }
+      
+      function renderVerticalAxis(canvas, ctx) {
+        let textHeight = 14;
+        ctx.fillStyle = "white";
+        ctx.font = `${textHeight}px sans-serif`;
+        for(let i = 0; i <= maxY; i += 100) {
+          let midpoint = transformPoint(0, i, canvas);
+          let label = `$${i}`;
+          let textWidth = ctx.measureText(label).width;
+          ctx.fillText(label, midpoint.x - textWidth - 10, midpoint.y + textHeight / 2);
+        }
+      }
+      
+      function renderData(canvas, ctx) {
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 3;
+        let point = transformPoint(0.5, Object.values(graphData)[0]);
+        ctx.beginPath();
+        ctx.moveTo(point.x, point.y);
+        let i = 0.5;
+        for(let date in graphData) {
+          point = transformPoint(i, graphData[date]);
+          ctx.lineTo(point.x, point.y);
+          i++;
+        }
+        ctx.stroke();
+      }
+      
+      function renderPuzzle(canvas, ctx) {
+        let pixels = [];
+        for(let i = 0; i < puzzleSolution.length; i++) {
+          let pixel = [];
+          for(let j = 0; j < 3; j++) {
+            pixel.push(parseInt(puzzleSolution[i][j + puzzleIdx]) * 255);
+          }
+          pixels.push(pixel);
+        }
+        puzzleIdx += 3;
+        
+        if(puzzleIdx >= puzzleSolution[0].length) {
+          puzzleIdx = 0;
+        }
+        if(puzzleX >= canvas.width) {
+          puzzleX = 0;
+          puzzleY += pixels.length;
+        }
+        if(puzzleY >= canvas.height) {
+          return false;
+        }
+        for(let i = 0; i < pixels.length; i++) {
+          ctx.fillStyle = `rgb(${pixels[i][0]},${pixels[i][1]},${pixels[i][2]})`;
+          ctx.fillRect(puzzleX, puzzleY + i, 1, 1);
+        }
+        puzzleX += 1;
+      }
+      
+      function transformPoint(x, y, canvas) {
+        x *= graphArea.width / maxX;
+        y *= -graphArea.height / maxY;
+        x += graphArea.x;
+        y += graphArea.y + graphArea.height;
+        return {"x": x, "y": y};
+      }
+    </script>
+  </head>
+  <body>
+    <div id="navbar">
+      <a href="index.html"><img src="img/unboxing_logo_small.png" style="height:100%; display:inline-block;"/></a>
+      <a class="nav-link control-link" href="index.html">Unboxing The Modern Man</a>
+      <a class="nav-link control-link" href="healthforce.html">Health Force</a>
+      <a class="nav-link control-link" href="testimonials.html">Testimonials</a>
+      <a class="nav-link control-link" href="products.html">Products</a>
+      <a class="active nav-link control-link" href="." style="float: right;">Admin Panel</a>
+    </div>
+    <div class="navbar-offset"></div>
+    <div style="width: 100%; height: calc(100vh - 4.2rem);">
+      <span class="control-panel">
+        <br/>
+        <a class="active admin-control control-link">Health Force Sales</a>
+        <a class="admin-control control-link">Private Journal</a>
+        <a class="admin-control control-link">Admin Controls</a>
+        <a class="admin-control control-link">Ticket Manager</a>
+        <a class="admin-control control-link">Calendar</a>
+        <a class="admin-control control-link">Talent Profiles</a>
+      </span>
+      <span class="admin-panel-content">
+        <canvas id="graph-canvas" width="600px" height="400px">
+        </canvas>
+        <button onclick="puzzleRunning = true;">Solve Puzzle</button>
+      </span>
+    </div>
+    <script>window.requestAnimationFrame(render);</script>
+  </body>
+</html>
